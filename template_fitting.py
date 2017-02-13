@@ -16,8 +16,15 @@ def besph(n, z):
     return ans
 
 
-
+# This function takes a power spectrum filename with BAO wiggles and one without,
+# as well as a smoothing scale sigma, and computes the template correlation function
+# to use in the fitting.
+# Default power spectra are supplied in the repository
 def make_template(pkwig="", pknowig="", sigma=8.0):
+    if (pkwig==""):
+        pkwig = "wig.txt"
+    if (pknowig == ""):
+        pknowig = "nowig.txt"
     #wiggles and no wiggles spectra
     wiggles=N.loadtxt(pkwig)
     pkwig=wiggles[:,1]
@@ -40,7 +47,8 @@ def make_template(pkwig="", pknowig="", sigma=8.0):
 
 
 
-
+# Computes the chi^2 of between the observed correlation function and the model (template)
+# This is the function that is minimized to find the best fit
 def chi_sq(x, *args):
     
     rm=args[0]
@@ -69,7 +77,9 @@ def chi_sq(x, *args):
     f=N.dot(N.transpose(mock-bf), N.dot(cinv, mock-bf))
     return f
 
-
+# Computes the inverse covariance matrix that is used in the fitting.
+# The covariance matrix is stored in a file, this reads in the covariance
+# matrix and inverts only the section that we are fitting over
 def get_inv_covariance(cov_file, i_low=0, i_high=-1):
     cov=N.loadtxt(cov_file)
     cov=cov[i_low:i_high, i_low:i_high]
@@ -77,15 +87,16 @@ def get_inv_covariance(cov_file, i_low=0, i_high=-1):
     
     
     
-    
+# This is the main function of the code:
+# numruns is the number of mock realizations to analyze
+# cf_file should be the prefix for the files where the correlation functions are stored
+# they will be appended with cf_file+### for each realization
+# cov_file is the file where the covariance matrix to be used is stored. The covariance matrix should be defined at the same values of r as the
+# mock correlation functions are.
+# rmin and rmax are the min and max distances used in the analysis (covariance function will be inverted only within this range)
+# pkwig and pknowig are the files with the linear power spectra with and without wiggles (used to make the template correlation function)
+# sigma is the amount by which the template BAO feature is smoothed (in Xu et al, they use values from 6.6-8.1 without reconstruction) 
 def template_fit(numruns, cf_file="", cov_file="", rmin=30, rmax=200, pkwig="", pknowig="", sigma=8.0):
-    #numruns is the number of realizations to analyze
-    #cf_file should be the prefix for the files where the correlation functions are stored
-    #they will be appended with cf_file+### for each realization
-    #cinv_file is the file where the inverse covariance matrix to be used is stored
-    #rmin and rmax are the min and max distances used in the analysis (covariance function should only include these distances)
-    #pkwig and pknowig are the files with the linear power spectra with and without wiggles (used to make the template correlation function)
-    #sigma is the amount by which the template BAO feature is smoothed (in Xu et al, they use values from 6.6-8.1 without reconstruction)
     
     #make template from the linear power spectra and sigma specified
     r, template=make_template(pkwig=pkwig, pknowig=pknowig, sigma=sigma)
